@@ -176,3 +176,158 @@ $people could be an empty array or collection...
 	create/update/fetch records. 
 
 ### Video 9: Basic Model/View/Controller Workflow ###
+
+	1. register routes and controller/method to be called.
+			can use an annonymous function in place of the controller and method.
+	2. create controller.
+		php artisan make:controller ArticleController
+	3. Add method to the controller. 
+		At the top of the page, import the namespace: 
+			use App\Article;
+		Create the function.
+			public function index() {
+				$articles= \App\Article::all();
+
+				return $articles;
+				(This returns json! But it just dumps json out on the page. We'd need to return a view instead.)
+
+				return view('article.index', compact('articles'));
+			} 
+	4. Resources/views - Create view.
+		Create html to display the data.
+
+		@extends('app')
+		@section('content')
+			<h1>Articles</h1>
+			@foreach ($articles as $article)
+				<article>
+					<h2> <a href="">{ $article->title }}</a></h2>
+					<div class="body"> {{ $article-body }} </div>
+				</article>
+			@endforeach
+		@stop
+
+		in the routes page:
+		Route::get('articles/{id}', 'ArticlesController@index');
+		in the controller, set up the method. 
+			public function show ($id) {
+				return $id;   <--- We'd want to set up a regex to designate specifically what we'd want to catch.
+				$article = Article::find($id);  <--- doesn't account for null values.
+				return $article;
+				
+				To account for null values... We could: 
+				if (is_null($article)) {
+					abort(404);  <--- Remember to turn off the errors ("debug => false" in config/app)
+				}
+
+				Instead let Laravel help us:
+				$article = Article::findOrFail($id);
+
+
+				return view('articles.show', compact('article'));
+			}
+					Realistically we'd want something more specific to the entity than a column from the db. (ex. articles/my-first-article)
+
+	5. Set the links to go to the appropriate place. 
+		We could hard code it (the uri). 
+			<h2> <a href="/articles/{{ $article->id }}">{ $article->title }}</a></h2>
+			
+		Instead... We can think in terms of model/controllers
+			<h2> <a href="{{ action('ArticlesController@show', [$article->id]) }}">{ $article->title }}</a></h2>
+
+		We could also do 
+			<h2> <a href="{{ url('/articles', $article->id }}">{ $article->title }}</a></h2>
+		
+		Can do named routes as well. (addressed in another video.)
+	
+### Video 10: Form ###
+
+	In routes: 
+		Route::get('articles/create', 'ArticlesController@create')
+		More specific routes should come before routes with wild cards. 
+		Ex: line 246 should come before ('articles/{id}')
+
+	In controller: 
+		public function create() {
+			return view('articles.create');
+		}
+	
+	Create view:
+		@extends('app')
+		@section('content')
+			<h1>Write a new article</h1>
+
+			<form action="">
+
+			</form>
+		@stop
+
+	Rather than create the form manually we can include a package.
+		in terminal: composer require illuminate/html
+			See in github: github.com/illuminate/html
+			Has a html builder and a form builder
+			Laravel Facade... we'll see in future videos.
+
+	Tell Laravel we've pulled in illuminate. 
+		HTML Service provider class. Registers objects, etc. 
+		use Illuminate\Support\ServiceProvider;
+
+		See config\app.php 
+			1. Scroll down to providers section. 
+				Add to the bottom: "Illuminate\HtmlServiceProvider",
+
+			2. Scroll down to aliases
+				Add to bottom: "'Form' => 'Illuminate\Html\FormFacade'"
+				Add to bottom: "'Html' => 'Illuminate\Html\HtmlFacade'"
+	
+	Once we have the above step completed... 
+		{{!! Form::open( url(articles) <-- You can use url(), a named route, or an ['action'] like previous video. --> ) !!}}
+			<div class="form-group">
+				{{!! Form::label('name', 'Name:') !!}}
+				{{!! Form::text('name', null, ['class' => 'form-control']) !!}} <-- This uses bootstrap.
+						name of element, default, [additional perameters]	
+			</div>
+			<div class='form-group'>
+				{{!! Form::label('body', 'Body:') !!}}
+				{{!! Form::textarea('body', null, ['class' => 'form-control']) !!}}
+			</div>
+			<div class="formgroup">
+				{{!! Form:submit('Add Article', ['class' => 'btn btn-primary form-control']) !!}}
+															(bootstrap classes)
+			</div>
+
+		{{!! Form::close() !!}}
+		This will fill in an action, method and token!
+			Our form has no validation, yet!
+
+
+		Route::post('articles', 'ArticlesController@store');
+
+		public function store() {
+			stores it in db and redirects.
+			we'll use a facade to get the variables (Use Request; at top.)
+			$input = Request::all();
+				$article = new Article;
+				$article->title = $input['title'];
+				eloquent protects against sql injections so this is okay.
+
+				This one won't save it to the db just yet. 
+				$article = new Article(['title' => 'article']);
+
+				or this:
+				Article::create($input); <-- Mass assignment variables will be filled. Nothing else. It'll discard everything else. 
+				$input['published_at'] = Carbon::now();
+				return redirect('articles');
+
+			$input = Request::get('body'); <--- to get specific field.
+		}
+
+		public function index() {
+			$articles = Article::lastest()->get();
+			opposite:			::oldest()
+
+				or
+			$articles = Article::order_by('published_at', 'desc')->get();
+
+		}
+
