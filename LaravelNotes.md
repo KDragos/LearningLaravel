@@ -101,7 +101,7 @@ $people could be an empty array or collection...
 	$table->text('excerpt')->nullable();
 		This means that the column can be null.
 
-### Eloquent 101 ###
+### Video 8: Eloquent 101 ###
 
 	Active record implementation = Eloquent
 
@@ -114,3 +114,65 @@ $people could be an empty array or collection...
 
 	the eloquent model class is in this folder.
 	vendor/laravel/framework/src/Illuminate/Database/Eloquent
+
+	At first, when you get the article back, you'll get some crazy long number/letter combo. That's because the object is empty. When you add stuff to it, it won't be just that. 
+	
+	To add/set/update stuff: "$article->title = {title}", "$article->body = {body text}", 
+	After updating be sure to save it. $article->save();
+
+	For timestamps, Laravel uses something called Carbon. 
+		$article->published_at = Carbon\Carbon::now();
+
+	To see the object: 
+	$article   or $article->toArray();
+
+	To save it to the database:
+		$article->save();
+
+	To see everything we have in that table. 
+	App\Article::all()->toArray(); 
+
+	To search for something ("where id = 1")
+	$article = App\Article::find(1);
+	
+	To search for something ("where body = "lorem ipsum"")
+	$article = App\Article::where('body', 'lorem ipsum')->get();
+		Returns a collection. -> kind of like "arrays on steroids"
+	
+	To search for the very first record where it matches.
+		$article = App\Article::where('body', 'lorem ipsum')->first();
+			Returns one record. 
+
+	A "short cut." To create and save at the same time.
+	This is called "MassAssignment"
+	$article = App\Article::create(['title' => 'new article', 'body' => 'new body', 'published_at' => Carbon\Carbon::now()]);
+		create will fill the fields, and persist/save it.
+	Be aware! This could cause vulnerability (sql injections).
+		Laravel will try to protect you. You need to specifiy which things can  be mass assigned.
+
+
+	To specify mass assigned things...
+		1. Go into the model.
+		2. Create a protected $fillable = [] property.
+		3. example: protected $fillable = [
+						'title',
+						'body',
+						'published_at'
+					]
+		4. If it's not included in the array, it can't be mass assigned.
+
+	To update something in the db. 
+		$article->update(['body' => 'updated again!']);
+		This is similar to the create method. It will call the method, fill the properties and save it.
+
+
+	Create migration
+	create task table.
+	open file
+	set fields
+	migrate database
+	make model
+		php make model task
+	create/update/fetch records. 
+
+### Video 9: Basic Model/View/Controller Workflow ###
