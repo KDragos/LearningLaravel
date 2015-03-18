@@ -331,3 +331,49 @@ $people could be an empty array or collection...
 
 		}
 
+### Video 11: Dates, Mutators, and Scopes
+
+	Carbon::now() <-- only for time. Not for date.
+
+	in our form: 
+	<div class="form-group">
+		{{!! Form::label('published_at', 'Publish On:') !!}}
+		{{!! Form::input('date', 'published_at', null, ['class' => 'form-control']) !!}}
+						type of input, column name, default, 
+						('date', 'published_at', date('Y-m-d'), ['class' => 'form-control'])
+	</div>
+
+	mutators - give us a way to manipulate data before its inserted into the db. 
+	in Article model:
+	
+	protected $dates = ['published_at']; <--- This sets it as a carbon instance. We can then use the carbon methods on it. 
+	   (naming format: set column name attribute)
+	public function setPublishedAtAttribute($date) {
+		$this->attributes['published_at'] = Carbon::createFormFormat('Y-m-d', $dtate);
+	}
+
+	To ensure you're only seeing records that have been published. 
+		ArticlesController
+		public function index() {
+			$articles = Article::latest('published_at')->where('published_at', '<=', Carbon::now())->get();
+			return view('articles.index', compact('articles'));
+		}
+
+		or: 
+			public function index() {
+				$articles = Article::latest('published_at')->published()->get();
+				return view('articles.index', compact('articles'));
+			}
+
+			published() becomes a scope. Scopes are functions that could essentially be used anywhere.
+			We'd go to our article model, to create the function there. That way we can used the published() function anywhere we'd need it. 
+			public function scopePublished($query) {
+				$query->where('published_at', '<=', Carbon::now());
+			}
+
+			public function scopeUnpublished($query) {
+				$query->where('published_at', '>', Carbon::now());
+			}
+
+			can get $article->created_at->addDays(8)->
+			->diffForHumans()); Show a "this will be 5 days from now."
